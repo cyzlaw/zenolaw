@@ -1,4 +1,4 @@
-index=its-tmx-threatmetrix sourcetype=tmx:log
+index=its-tmx-threatmetrix sourcetype=tmx:log policy IN ("us_wire_payment", "us_ach_payment", "ca_wbb_online_login")
 | stats latest(_time) as latest_timestamp dc(session_id) as events by policy
 | append [
     | stats count
@@ -19,3 +19,4 @@ index=its-tmx-threatmetrix sourcetype=tmx:log
 )
 | convert ctime(latest_timestamp)
 | search status!="Other"
+| table policy latest_timestamp events "Threshold limit" status
