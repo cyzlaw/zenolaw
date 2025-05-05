@@ -1,0 +1,21 @@
+index=its-tmx-threatmetrix sourcetype=tmx:log
+| stats latest(_time) as latest_timestamp dc(session_id) as events by policy
+| append [
+    | stats count
+    | eval policy="us_wire_payment",     yellow_min=151, yellow_max=180, red_min=181
+    | append [| eval policy="us_ach_payment",       yellow_min=181, yellow_max=230, red_min=231]
+    | append [| eval policy="ca_wbb_online_login", yellow_min=6151, yellow_max=7800, red_min=7801]
+]
+| stats values(*) as * by policy
+| eval status=case(
+    events >= yellow_min AND events <= yellow_max, "Yellow",
+    events >= red_min, "RED",
+    1=1, "Other"
+)
+| eval "Threshold limit"=case(
+    status="Yellow", yellow_min,
+    status="RED", red_min,
+    1=1, "Other"
+)
+| convert ctime(latest_timestamp)
+| search status!="Other"
